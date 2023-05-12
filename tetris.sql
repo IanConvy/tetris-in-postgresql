@@ -1,59 +1,68 @@
+/* 
+When run in an empty database, this script file generates the tables, views, functions, and
+procedured needed for the Tetris application. Once the scipt has been run, the "reset" procedure
+must be called in order to prepare the components and print the blank playfield. To place a piece,
+you insert a (pos, orient) tuple into the "moves" table, where "pos" is an integer from 1 to 10 that
+marks the leftmost column to place the piece, and "orient" is an integer that determines the rotation
+of the piece.
+*/
+
 CREATE EXTENSION IF NOT EXISTS tablefunc;
 
-CREATE TABLE IF NOT EXISTS board (
+CREATE TABLE IF NOT EXISTS board ( -- Holds the instantaneous state of the playfield
     height INT,
     width INT,
     state BOOL DEFAULT 'false'
 );
 
-CREATE OR REPLACE VIEW readable AS
+CREATE OR REPLACE VIEW readable AS -- A view of "board" that a human being could read from
     SELECT * FROM crosstab(
         'SELECT height, width, CASE WHEN state THEN ''X'' ELSE '' '' END AS val FROM board ORDER BY 1,2') AS 
             t (height INT, c1 TEXT, c2 TEXT, c3 TEXT, c4 TEXT, c5 TEXT, c6 TEXT, c7 TEXT, c8 TEXT, c9 TEXT, c10 TEXT);
 
-CREATE TABLE IF NOT EXISTS lines (
+CREATE TABLE IF NOT EXISTS lines ( -- Holds the number of line clears
     num_lines INT,
     num_cleared INT
 );
 
-CREATE TABLE IF NOT EXISTS moves (
+CREATE TABLE IF NOT EXISTS moves ( -- Holds the moves that have been made
     pos INT,
     orient INT
 );
 
-CREATE TABLE IF NOT EXISTS piece_log (piece_name)
+CREATE TABLE IF NOT EXISTS piece_log (piece_name) -- Holds the current piece
     AS SELECT 'blank';
 
-CREATE TABLE IF NOT EXISTS pieces (name, orient, b1, b2, b3, b4)
-    AS VALUES
-        ('sq', 0, ARRAY [0,0], ARRAY [0,1], ARRAY [1,0], ARRAY [1,1]),
-        ('i', 0, ARRAY [0,0], ARRAY [0,1], ARRAY [0,2], ARRAY [0,3]),
-        ('i', 1, ARRAY [-1,0], ARRAY [0,0], ARRAY [1,0], ARRAY [2,0]),
-        ('t', 0, ARRAY [0,0], ARRAY [0,1], ARRAY [1,1], ARRAY [0,2]),
-        ('t', 1, ARRAY [0,0], ARRAY [0,1], ARRAY [1,1], ARRAY [-1,1]),
-        ('t', 2, ARRAY [0,0], ARRAY [0,1], ARRAY [-1,1], ARRAY [0,2]),
-        ('zr', 0, ARRAY [1,0], ARRAY [1,1], ARRAY [0,1], ARRAY [0,2]),
-        ('zr', 1, ARRAY [0,0], ARRAY [-1,0], ARRAY [0,1], ARRAY [1,1]),
-        ('zl', 0, ARRAY [0,0], ARRAY [0,1], ARRAY [1,1], ARRAY [1,2]),
-        ('zl', 1, ARRAY [0,0], ARRAY [1,0], ARRAY [0,1], ARRAY [-1,1]),
-        ('lr', 0, ARRAY [0,0], ARRAY [1,0], ARRAY [0,1], ARRAY [0,2]),
-        ('lr', 1, ARRAY [0,1], ARRAY [-1,1], ARRAY [-1,0], ARRAY [1,1]),
-        ('lr', 2, ARRAY [0,0], ARRAY [0,1], ARRAY [0,2], ARRAY [-1,2]),
-        ('lr', 3, ARRAY [0,0], ARRAY [-1,0], ARRAY [1,0], ARRAY [1,1]),
-        ('ll', 0, ARRAY [0,0], ARRAY [0,1], ARRAY [0,2], ARRAY [1,2]),
-        ('ll', 1, ARRAY [1,0], ARRAY [1,1], ARRAY [0,1], ARRAY [-1,1]),
-        ('ll', 2, ARRAY [0,0], ARRAY [-1,0], ARRAY [0,1], ARRAY [0,2]),
-        ('ll', 3, ARRAY [0,0], ARRAY [-1,0], ARRAY [-1,1], ARRAY [1,0]),
-        ('t', 3, ARRAY [0,0], ARRAY [0,1], ARRAY [-1,0], ARRAY [1,0]);   
+CREATE TABLE IF NOT EXISTS pieces (name, orient, b1, b2, b3, b4, prev1, prev2, prev3, prev4)
+    AS VALUES -- Holds information that characterizes the seven Tetris pieces
+        ('sq', 1, ARRAY [0,0], ARRAY [0,1], ARRAY [1,0], ARRAY [1,1], 'X X', 'X X', '   ', '   '),
+        ('i', 1, ARRAY [0,0], ARRAY [0,1], ARRAY [0,2], ARRAY [0,3], 'X X X X', '       ', '       ', '       '),
+        ('i', 2, ARRAY [-1,0], ARRAY [0,0], ARRAY [1,0], ARRAY [2,0], 'X', 'X', 'X', 'X'),
+        ('t', 1, ARRAY [0,0], ARRAY [0,1], ARRAY [1,1], ARRAY [0,2], 'X X X', '  X  ', '     ', '     '),
+        ('t', 2, ARRAY [0,0], ARRAY [0,1], ARRAY [1,1], ARRAY [-1,1], '  X', 'X X', '  X', '   '),
+        ('t', 3, ARRAY [0,0], ARRAY [0,1], ARRAY [-1,1], ARRAY [0,2], '  X  ', 'X X X', '     ', '     '),
+        ('t', 4, ARRAY [0,0], ARRAY [0,1], ARRAY [-1,0], ARRAY [1,0], 'X  ', 'X X', 'X  ', '   '),
+        ('zr', 1, ARRAY [1,0], ARRAY [1,1], ARRAY [0,1], ARRAY [0,2], '  X X', 'X X  ', '     ', '     '),
+        ('zr', 2, ARRAY [0,0], ARRAY [-1,0], ARRAY [0,1], ARRAY [1,1], 'X  ', 'X X', '  X', '   '),
+        ('zl', 1, ARRAY [0,0], ARRAY [0,1], ARRAY [1,1], ARRAY [1,2], 'X X  ', '  X X', '     ', '     '),
+        ('zl', 2, ARRAY [0,0], ARRAY [1,0], ARRAY [0,1], ARRAY [-1,1], '  X', 'X X', 'X  ', '   '),
+        ('lr', 1, ARRAY [0,0], ARRAY [1,0], ARRAY [0,1], ARRAY [0,2], 'X X X', 'X    ', '     ', '     '),
+        ('lr', 2, ARRAY [0,1], ARRAY [-1,1], ARRAY [-1,0], ARRAY [1,1], 'X X', '  X', '  X', '   '),
+        ('lr', 3, ARRAY [0,0], ARRAY [0,1], ARRAY [0,2], ARRAY [-1,2], '    X', 'X X X',  '     ', '     '),
+        ('lr', 4, ARRAY [0,0], ARRAY [-1,0], ARRAY [1,0], ARRAY [1,1], 'X  ', 'X  ', 'X X', '   '),
+        ('ll', 1, ARRAY [0,0], ARRAY [0,1], ARRAY [0,2], ARRAY [1,2], 'X X X', '    X', '     ', '     '),
+        ('ll', 2, ARRAY [1,0], ARRAY [1,1], ARRAY [0,1], ARRAY [-1,1], '  X', '  X', 'X X', '   '),
+        ('ll', 3, ARRAY [0,0], ARRAY [-1,0], ARRAY [0,1], ARRAY [0,2], 'X    ', 'X X X', '     ', '     '),
+        ('ll', 4, ARRAY [0,0], ARRAY [-1,0], ARRAY [-1,1], ARRAY [1,0], 'X X', 'X  ', 'X  ', '   ');   
 
-CREATE OR REPLACE PROCEDURE reset()
+CREATE OR REPLACE PROCEDURE reset() -- Prepares all tables for a new game
 LANGUAGE plpgsql
 AS $$
     DECLARE
         col_index INT;
         row_index INT;
     BEGIN
-        TRUNCATE TABLE moves RESTART IDENTITY;
+        TRUNCATE TABLE moves;
         TRUNCATE TABLE board;
         TRUNCATE TABLE lines;
         INSERT INTO lines(num_lines, num_cleared) VALUES (1, 0), (2, 0), (3, 0), (4, 0);
@@ -64,7 +73,7 @@ AS $$
     END;
 $$;
 
-CREATE OR REPLACE FUNCTION print_board()
+CREATE OR REPLACE FUNCTION print_board() -- Displays the current playfield
     RETURNS VOID
     LANGUAGE plpgsql
 AS $$
@@ -82,7 +91,7 @@ AS $$
     END;
 $$;
 
-CREATE OR REPLACE FUNCTION print_clears()
+CREATE OR REPLACE FUNCTION print_clears() -- Displays the current number of line clears
     RETURNS VOID
     LANGUAGE plpgsql
 AS $$
@@ -95,7 +104,48 @@ AS $$
     END;
 $$;
 
-CREATE OR REPLACE FUNCTION get_piece()
+CREATE OR REPLACE FUNCTION print_piece(piece_name TEXT) -- Displays the current piece
+    RETURNS VOID
+    LANGUAGE plpgsql
+AS $$
+    DECLARE
+        piece_text1 RECORD;
+        piece_text2 RECORD;
+        piece_text3 RECORD;
+        piece_text4 RECORD;
+    BEGIN
+        SELECT prev1, prev2, prev3, prev4 INTO piece_text1 FROM pieces 
+            WHERE name = piece_name AND orient = 1;
+        SELECT prev1, prev2, prev3, prev4 INTO piece_text2 FROM pieces 
+            WHERE name = piece_name AND orient = 2;
+        SELECT prev1, prev2, prev3, prev4 INTO piece_text3 FROM pieces 
+            WHERE name = piece_name AND orient = 3;
+        SELECT prev1, prev2, prev3, prev4 INTO piece_text4 FROM pieces 
+            WHERE name = piece_name AND orient = 4;
+        RAISE NOTICE 'Next piece:  %  |  %  |  %  |  %', 
+            piece_text1.prev1, 
+            COALESCE(piece_text2.prev1, ''), 
+            COALESCE(piece_text3.prev1, ''), 
+            COALESCE(piece_text4.prev1, '');
+        RAISE NOTICE '             %  |  %  |  %  |  %',
+            piece_text1.prev2, 
+            COALESCE(piece_text2.prev2, ''), 
+            COALESCE(piece_text3.prev2, ''), 
+            COALESCE(piece_text4.prev2, '');
+        RAISE NOTICE '             %  |  %  |  %  |  %',
+            piece_text1.prev3, 
+            COALESCE(piece_text2.prev3, ''), 
+            COALESCE(piece_text3.prev3, ''), 
+            COALESCE(piece_text4.prev3, '');
+        RAISE NOTICE '             %  |  %  |  %  |  %',
+            piece_text1.prev4, 
+            COALESCE(piece_text2.prev4, ''), 
+            COALESCE(piece_text3.prev4, ''), 
+            COALESCE(piece_text4.prev4, '');
+    END;
+$$;
+
+CREATE OR REPLACE FUNCTION get_piece() -- Retrieves a random piece
     RETURNS TEXT
     LANGUAGE plpgsql
 AS $$
@@ -116,24 +166,25 @@ AS $$
     END;
 $$;
 
-CREATE OR REPLACE FUNCTION prepare_next()
+CREATE OR REPLACE FUNCTION prepare_next() -- Displays new game state and gets next piece
     RETURNS VOID
     LANGUAGE plpgsql
 AS $$
     DECLARE
         piece_txt TEXT;
     BEGIN
-        piece_txt = get_piece();
         PERFORM print_board();
         PERFORM print_clears();
-        RAISE NOTICE 'Next piece is "%"', piece_txt;
+        RAISE NOTICE ' ';
+        piece_txt = get_piece();
+        PERFORM print_piece(piece_txt);
         UPDATE piece_log SET piece_name = piece_txt;
     END;
 $$;
 
-
-CREATE OR REPLACE FUNCTION check_block_collision(row0 INT, col0 INT)
-    RETURNS BOOL
+-- Checks tile for collisions
+CREATE OR REPLACE FUNCTION check_block_collision(row0 INT, col0 INT) -- Checks tile for collisions
+    RETURNS BOOL 
     LANGUAGE plpgsql
 AS $$
     DECLARE
@@ -150,7 +201,7 @@ AS $$
     END;
 $$; 
 
-CREATE OR REPLACE FUNCTION check_piece_collision(
+CREATE OR REPLACE FUNCTION check_piece_collision( -- Checks all tiles at given position for collisions
     row0 INT, col0 INT, b1 INT[], b2 INT[], b3 INT[], b4 INT[])
     RETURNS BOOL
     LANGUAGE plpgsql
@@ -168,7 +219,7 @@ AS $$
     END;
 $$;
 
-CREATE OR REPLACE FUNCTION add_piece(
+CREATE OR REPLACE FUNCTION add_piece( -- Adds a piece to the playfield
     row0 INT, col0 INT, b1 INT[], b2 INT[], b3 INT[], b4 INT[])
     RETURNS VOID
     LANGUAGE plpgsql
@@ -182,7 +233,7 @@ AS $$
     END;
 $$;
 
-CREATE OR REPLACE FUNCTION clear_lines()
+CREATE OR REPLACE FUNCTION clear_lines() -- Clears all filled lines
     RETURNS VOID
     LANGUAGE plpgsql
 AS $$
@@ -204,7 +255,7 @@ AS $$
     END;
 $$;
 
-CREATE OR REPLACE FUNCTION place()
+CREATE OR REPLACE FUNCTION place() -- Runs game logic when a piece is placed
     RETURNS TRIGGER
     LANGUAGE plpgsql
 AS $$
@@ -218,6 +269,12 @@ AS $$
     BEGIN
         SELECT * INTO piece FROM pieces WHERE orient = NEW.orient AND 
             pieces.name = (SELECT piece_log.piece_name FROM piece_log);
+        IF piece IS NULL THEN
+            PERFORM print_board();
+            RAISE NOTICE 'Piece does not have orientation %.', NEW.orient;
+            PERFORM print_piece((SELECT piece_log.piece_name FROM piece_log));
+            RETURN NULL;
+        END IF;
         col0 = NEW.pos;
         FOR row_itr IN 1..21 LOOP
             collision = check_piece_collision(row_itr, col0, piece.b1, piece.b2, piece.b3, piece.b4);
@@ -227,7 +284,7 @@ AS $$
         IF row0 = 0 THEN
             PERFORM print_board();
             RAISE NOTICE 'Piece cannot be placed.';
-            RAISE NOTICE 'Current piece is "%"', piece.name;
+            PERFORM print_piece(piece.name);
             RETURN NULL;
         ELSE
             PERFORM add_piece(row0, col0, piece.b1, piece.b2, piece.b3, piece.b4);
