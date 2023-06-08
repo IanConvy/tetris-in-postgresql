@@ -255,7 +255,7 @@ AS $$
     END;
 $$;
 
-CREATE OR REPLACE FUNCTION place() -- Runs game logic when a piece is placed
+CREATE OR REPLACE FUNCTION place_piece() -- Runs game logic when a piece is placed
     RETURNS TRIGGER
     LANGUAGE plpgsql
 AS $$
@@ -296,4 +296,13 @@ AS $$
 $$;
 
 CREATE OR REPLACE TRIGGER piece_placed BEFORE INSERT ON moves FOR EACH ROW
-    EXECUTE PROCEDURE place();
+    EXECUTE PROCEDURE place_piece();
+
+CREATE OR REPLACE PROCEDURE place(pos_in INT, orient_in INT) -- Takes user input for piece placement
+    LANGUAGE plpgsql
+AS $$ 
+    BEGIN
+        INSERT INTO moves (pos, orient) VALUES (pos_in, orient_in);
+    COMMIT;
+    END; 
+$$;

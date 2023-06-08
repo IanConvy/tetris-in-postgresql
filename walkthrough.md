@@ -267,13 +267,13 @@ While the function is fairly long, it is really just repeating the same basic st
 
 ## Placing a piece
 
-Once a new game has been started, the player can place a piece by performing an insertion into the `moves` table: `INSERT INTO moves (pos, orient) VALUES (int1, int2);`. The value of `int1`, which must be between 1 and 10, denotes the leftmost column that the piece will occupy. The value of `int2` specifies which orientation to place the piece. This value must be greater than zero but no larger than the maximum number of orientations for the piece, which can be determined by simply looking at the number of different illustration that are displayed. Once the orientation and horizontal position have been chosen, the piece will be dropped vertically onto the stack of previous pieces.
+Once a new game has been started, the player can place a piece by performing an insertion into the `moves` table. This can be done manually using `INSERT INTO moves (pos, orient) VALUES (int1, int2);`, or more conveniently by calling the `place` stored procedure with arguments `int1` and `int2`, i.e. `CALL place(int1, int2);`, which executes the same insertion statement. The value of `int1`, which must be between 1 and 10, denotes the leftmost column that the piece will occupy. The value of `int2` specifies which orientation to place the piece. This value must be greater than zero but no larger than the maximum number of orientations for the piece, which can be determined by simply looking at the number of different illustrations that are displayed. Once the orientation and horizontal position have been chosen, the piece will be dropped vertically onto the stack of previous pieces.
 
-Internally, the process described above is carried out using a trigger on the `moves` table that is called before each row insertion. This trigger executes the `place` function, which is given below:
+Internally, the process described above is carried out using a trigger on the `moves` table that is called before each row insertion. This trigger executes the `place_piece` function, which is given below:
 
 
 ```python
-CREATE OR REPLACE FUNCTION place()
+CREATE OR REPLACE FUNCTION place_piece()
     RETURNS TRIGGER
     LANGUAGE plpgsql
 AS $$
