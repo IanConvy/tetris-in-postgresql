@@ -1,10 +1,10 @@
 /* 
 When run in an empty database, this script file generates the tables, views, functions, and
-procedured needed for the Tetris application. Once the scipt has been run, the "reset" procedure
+procedures needed for the Tetris application. Once the scipt has been run, the "reset" procedure
 must be called in order to prepare the components and print the blank playfield. To place a piece,
-you insert a (pos, orient) tuple into the "moves" table, where "pos" is an integer from 1 to 10 that
-marks the leftmost column to place the piece, and "orient" is an integer that determines the rotation
-of the piece.
+you insert a (pos, orient) tuple into the "moves" table using CALL place(pos, orient), where "pos" is 
+an integer from 1 to 10 that marks the leftmost column to place the piece, and "orient" is an integer 
+that determines the rotation of the piece.
 */
 
 CREATE EXTENSION IF NOT EXISTS tablefunc;
