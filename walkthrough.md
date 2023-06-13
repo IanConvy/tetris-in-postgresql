@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS board (
 );
 ```
 
-The `moves` table is the only one that the player interacts with directly, and has a column for the position of the Tetris piece (measured from its leftmost block) and its orientation. These are the two pieces of information that the player most provide to make a move, a process which is described in more detail later. The `lines` table is used to keep track of the number (column `num_cleared`) and type (column `num_lines`) of each line clear that occurs, and serves as the effective scoreboard of the game. The `piece_log` is used to keep track of the current piece, and only ever contains a single value. Finally, the highly dynamic `board` table keeps track of where pieces are placed, and lies at the heart of the application. Each row in the table corresponds to a specific tile in the 20x10 playfield, with the `height` and `width` columns defining its exact position. The `state` boolean column stores whether the tile is currently occupied by a piece block, and thus plays a key role in determining where the player can drop pieces and which lines need to be cleared. Upon calling the `reset` procedure (described later), the `board` table is populated using the following INSERT statement:
+The `moves` table is the only one that the player interacts with directly, and has a column for the position of the Tetris piece (measured from its leftmost block) and its orientation. These are the two pieces of information that the player must provide to make a move, a process which is described in more detail later. The `lines` table is used to keep track of the number (column `num_cleared`) and type (column `num_lines`) of each line clear that occurs, and serves as the effective scoreboard of the game. The `piece_log` is used to keep track of the current piece, and only ever contains a single value. Finally, the highly dynamic `board` table keeps track of where pieces are placed, and lies at the heart of the application. Each row in the table corresponds to a specific tile in the 20x10 playfield, with the `height` and `width` columns defining its exact position. The `state` boolean column stores whether the tile is currently occupied by a piece block, and thus plays a key role in determining where the player can drop pieces and which lines need to be cleared. Upon calling the `reset` procedure (described later), the `board` table is populated using the following INSERT statement:
 
 
 ```python
@@ -88,7 +88,7 @@ AS VALUES
          'X X', 'X  ', 'X  ', '   ');   
 ```
 
-Each row in the table describes a specific piece (given by the `name` column) in a specific orientation (given by the `orient` column), with information about the relative positions of the four blocks (columns `b1`, `b2`, `b3`. and `b4`) and the text strings needed to properly illustrate the pieces (columns `prev1`, `prev2`, `prev3`, and `prev4`, to be discussed more later). The block positions are each provided as a two-element integer array, with the first integer giving its relative height and the second giving its relative width. These values are taken relative to the block assigned `[0, 0]`, which is always in the leftmost position (although at varying heights). Because of the way the board is configured, a smaller height value actually indicates a piece that is further up the playfield (i.e. closer to the top from the perspective of the player), with pieces appearing initiallity a height of 1 and then falling into place at some larger value (maximum of 20).
+Each row in the table describes a specific piece (given by the `name` column) in a specific orientation (given by the `orient` column), with information about the relative positions of the four blocks (columns `b1`, `b2`, `b3`. and `b4`) and the text strings needed to properly illustrate the pieces (columns `prev1`, `prev2`, `prev3`, and `prev4`, to be discussed more later). The block positions are each provided as a two-element integer array, with the first integer giving its relative height and the second giving its relative width. These values are taken relative to the block assigned `[0, 0]`, which is always in the leftmost position (although at varying heights). Because of the way the board is configured, a smaller height value actually indicates a piece that is further up the playfield (i.e. closer to the top from the perspective of the player), with pieces appearing initially a height of 1 and then falling into place at some larger value (maximum of 20).
 
 ## Starting a game
 
@@ -139,7 +139,7 @@ AS $$
 $$;
 ```
 
-We can see that `prepare_next` first calls a pair of functions that print the current state of the playfield (empty at this point) and thes number of line clears (all zero). The code for these functions is given below: 
+We can see that `prepare_next` first calls a pair of functions that print the current state of the playfield (empty at this point) and the number of line clears (all zero). The code for these functions is given below: 
 
 
 ```python
@@ -175,7 +175,7 @@ AS $$
 $$;
 ```
 
-As can be seen, the graphical display is produced by raising notices with appropriately-formatted strings. Since the `board` table is not structured to be especially readable, we intead employ a view called `readable` that constructs a pivot table whose columns are the columns of the playfield: 
+As can be seen, the graphical display is produced by raising notices with appropriately-formatted strings. Since the `board` table is not structured to be especially readable, we instead employ a view called `readable` that constructs a pivot table whose columns are the columns of the playfield: 
 
 
 ```python
@@ -191,7 +191,7 @@ CREATE OR REPLACE VIEW readable AS
 
 Once the `board` table is repackaged in this more intuitive format, it can be easily displayed to the player by simply raising a notice for each row. Since the `crosstab` function is not available by default, we must import the `tablefunc` extension.
 
-Looking back a the second half of the `prepare_next` function, we can see that it next calls the `get_piece` function, which returns a random piece name that will serve as the next piece to be placed. The code for this function is given below: 
+Looking back at the second half of the `prepare_next` function, we can see that it next calls the `get_piece` function, which returns a random piece name that will serve as the next piece to be placed. The code for this function is given below: 
 
 
 ```python
@@ -217,7 +217,7 @@ AS $$
 $$;
 ```
 
-While a bit verbose, this function operates in a simple manner by first sampling a random number uniformly between 0 and 7, and then returning a piece name based on which two integers it lies most tighlty between. Once the piece has been selected, `prepare_next` stores its name in the `piece_log` table (which is the table's only purpose) and then displays its shape to the player by calling the `print_piece` function. The code for this function is given below: 
+While a bit verbose, this function operates in a simple manner by first sampling a random number uniformly between 0 and 7, and then returning a piece name based on which two integers it lies most tightly between. Once the piece has been selected, `prepare_next` stores its name in the `piece_log` table (which is the table's only purpose) and then displays its shape to the player by calling the `print_piece` function. The code for this function is given below: 
 
 
 ```python
@@ -381,7 +381,7 @@ AS $$
 $$;
 ```
 
-This function simply updates the values in `board` which correspond to the final position of the piece. Once the state of those tiles is changed to `true`, the `place` function cleares any filled lines by calling the `clear_lines` function, which is given below:
+This function simply updates the values in `board` which correspond to the final position of the piece. Once the state of those tiles is changed to `true`, the `place` function clears any filled lines by calling the `clear_lines` function, which is given below:
 
 
 ```python
