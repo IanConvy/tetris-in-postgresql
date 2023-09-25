@@ -6,5 +6,4 @@ the blank playfield. To place a piece, you insert a (pos, orient) tuple into the
 where "pos" is an integer from 1 to 10 that marks the leftmost column to place the piece, and "orient" is an integer that 
 determines the rotation of the piece.
 
-An explanation of the code and a more detailed explanation of the application can be found in the `walkthrough.md` markdown
-file.
+A detailed explanation of the application and its codebase can be found on [my website](https://ianconvy.github.io/projects/tetris/tetris-sql/tetris-sql.html).
